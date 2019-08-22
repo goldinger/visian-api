@@ -1,4 +1,4 @@
-from flask import Flask, jsonify
+from flask import Flask, jsonify, request
 import mysql.connector
 from mysql.connector import Error
 app = Flask(__name__)
@@ -19,8 +19,8 @@ def hello():
     return 'Hello'
 
 
-@app.route('/tasks/<int:project_id>')
-def get_tasks(project_id):
+@app.route('/projects/<int:project_id>')
+def project(project_id):
     try:
         connection = mysql.connector.connect(host='213.32.19.136',
                                              database='visian',
@@ -29,7 +29,12 @@ def get_tasks(project_id):
         cursor = connection.cursor()
         cursor.execute("select * from TasksFull where projectid = " + str(int(project_id)))
         records = cursor.fetchall()
-        return jsonify(to_dict(cursor.column_names, records))
+        records = to_dict(cursor.column_names, records)
+        for record in records:
+            cursor.execute("select * from Documents where task_id = " + str(int(record.get('id', 0))))
+            documents = to_dict(cursor.column_names, cursor.fetchall())
+            record['documents'] = documents
+        return jsonify(records)
     except Error as e:
         print("Error reading data from MySQL table", e)
         return jsonify([])
@@ -38,6 +43,56 @@ def get_tasks(project_id):
             connection.close()
             cursor.close()
             print("MySQL connection is closed")
+
+
+@app.route('/tasks/<int:task_id>', methods=['GET', 'POST'])
+def task(task_id):
+    if request.method == 'GET':
+        try:
+            connection = mysql.connector.connect(host='213.32.19.136',
+                                                 database='visian',
+                                                 user='visian',
+                                                 password='visian')
+            cursor = connection.cursor()
+            cursor.execute("select * from TasksFull where id = " + str(int(task_id)))
+            records = cursor.fetchall()
+            return jsonify(to_dict(cursor.column_names, records))
+        except Error as e:
+            print("Error reading data from MySQL table", e)
+            return jsonify([])
+        finally:
+            if (connection.is_connected()):
+                connection.close()
+                cursor.close()
+                print("MySQL connection is closed")
+    elif request.method == 'POST':
+        done = request.get_json().get('done')
+        print(request.get_json())
+        if done not in [0, 1]:
+            return {
+                "status": "KO"
+            }
+        try:
+            connection = mysql.connector.connect(host='213.32.19.136',
+                                                 database='visian',
+                                                 user='visian',
+                                                 password='visian')
+            cursor = connection.cursor()
+            cursor.execute("update Tasks set Done = " + str(int(done)) + " where id = " + str(int(task_id)))
+            connection.commit()
+            return {
+                "status": "OK"
+            }
+        except Error as e:
+            print("Error updating data from MySQL table", e)
+            return {
+                "status": "KO"
+            }
+        finally:
+            if (connection.is_connected()):
+                connection.close()
+                cursor.close()
+                print("MySQL connection is closed")
 
 
 if __name__ == '__main__':
