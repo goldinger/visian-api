@@ -34,10 +34,14 @@ def project(project_id):
             cursor.execute("select * from Documents where task_id = " + str(int(record.get('id', 0))))
             documents = to_dict(cursor.column_names, cursor.fetchall())
             record['documents'] = documents
-        return jsonify(records)
+        response = jsonify(records)
+        response.headers['Access-Control-Allow-Origin'] = '*'
+        return response
     except Error as e:
         print("Error reading data from MySQL table", e)
-        return jsonify([])
+        response = jsonify([])
+        response.headers['Access-Control-Allow-Origin'] = '*'
+        return response
     finally:
         if (connection.is_connected()):
             connection.close()
@@ -56,10 +60,14 @@ def task(task_id):
             cursor = connection.cursor()
             cursor.execute("select * from TasksFull where id = " + str(int(task_id)))
             records = cursor.fetchall()
-            return jsonify(to_dict(cursor.column_names, records))
+            response = jsonify(to_dict(cursor.column_names, records))
+            response.headers['Access-Control-Allow-Origin'] = '*'
+            return response
         except Error as e:
             print("Error reading data from MySQL table", e)
-            return jsonify([])
+            response = jsonify([])
+            response.headers['Access-Control-Allow-Origin'] = '*'
+            return response
         finally:
             if (connection.is_connected()):
                 connection.close()
@@ -80,14 +88,18 @@ def task(task_id):
             cursor = connection.cursor()
             cursor.execute("update Tasks set Done = " + str(int(done)) + " where id = " + str(int(task_id)))
             connection.commit()
-            return {
+            response = jsonify({
                 "status": "OK"
-            }
+            })
+            response.headers['Access-Control-Allow-Origin'] = '*'
+            return response
         except Error as e:
             print("Error updating data from MySQL table", e)
-            return {
+            response = jsonify({
                 "status": "KO"
-            }
+            })
+            response.headers['Access-Control-Allow-Origin'] = '*'
+            return response
         finally:
             if (connection.is_connected()):
                 connection.close()
