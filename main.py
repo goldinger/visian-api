@@ -74,12 +74,14 @@ def task(task_id):
                 cursor.close()
                 print("MySQL connection is closed")
     elif request.method == 'POST':
-        done = request.get_json().get('done')
-        print(request.get_json())
+        done = request.get_json(force=True).get('done')
+        print(",",request.get_json())
         if done not in [0, 1]:
-            return {
+            response = jsonify({
                 "status": "KO"
-            }
+            })
+            response.headers['Access-Control-Allow-Origin'] = '*'
+            return response
         try:
             connection = mysql.connector.connect(host='213.32.19.136',
                                                  database='visian',
