@@ -79,7 +79,6 @@ def entity(entity_id):
             print("MySQL connection is closed")
 
 
-
 @app.route('/tasks/<int:task_id>', methods=['GET', 'POST'])
 def task(task_id):
     if request.method == 'GET':
@@ -138,6 +137,32 @@ def task(task_id):
                 connection.close()
                 cursor.close()
                 print("MySQL connection is closed")
+
+
+@app.route('/getProjectsByEntityId/<int:entity_id>')
+def get_projects_by_entity_id(entity_id):
+    try:
+        connection = mysql.connector.connect(host='213.32.19.136',
+                                             database='visian',
+                                             user='visian',
+                                             password='visian')
+        cursor = connection.cursor()
+        cursor.execute("select * from Projects where entity = " + str(int(entity_id)))
+        records = cursor.fetchall()
+        records = to_dict(cursor.column_names, records)
+        response = jsonify(records)
+        response.headers['Access-Control-Allow-Origin'] = '*'
+        return response
+    except Error as e:
+        print("Error reading data from MySQL table", e)
+        response = jsonify([])
+        response.headers['Access-Control-Allow-Origin'] = '*'
+        return response
+    finally:
+        if (connection.is_connected()):
+            connection.close()
+            cursor.close()
+            print("MySQL connection is closed")
 
 
 if __name__ == '__main__':
