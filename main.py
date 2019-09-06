@@ -31,7 +31,7 @@ def project(project_id):
         records = cursor.fetchall()
         records = to_dict(cursor.column_names, records)
         for record in records:
-            cursor.execute("select * from Documents where task_id = " + str(int(record.get('id', 0))))
+            cursor.execute("select * from Documents where tasktypeid = " + str(int(record.get('tasktypeid', 0))))
             documents = to_dict(cursor.column_names, cursor.fetchall())
             record['documents'] = documents
         response = jsonify(records)
