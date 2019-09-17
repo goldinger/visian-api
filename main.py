@@ -79,10 +79,10 @@ def entity(entity_id):
             print("MySQL connection is closed")
 
 
-@app.route('/tasks/<int:task_id>/setDone', methods=['GET', 'POST'])
-def set_done(task_id):
+@app.route('/tasks/<int:task_id>/setNote', methods=['POST'])
+def set_note(task_id):
     if request.method == 'POST':
-        note = request.get_json(force=True).get('done')
+        note = request.get_json(force=True).get('note')
         if note is None:
             response = jsonify({
                 "status": "KO"
@@ -95,7 +95,7 @@ def set_done(task_id):
                                                  user='visian',
                                                  password='visian')
             cursor = connection.cursor()
-            cursor.execute("update Tasks set note = " + note + " where id = " + str(int(task_id)))
+            cursor.execute('update Tasks set note = "' + note + '" where id = ' + str(int(task_id)))
             connection.commit()
             response = jsonify({
                 "status": "OK"
@@ -105,7 +105,8 @@ def set_done(task_id):
         except Error as e:
             print("Error updating data from MySQL table", e)
             response = jsonify({
-                "status": "KO"
+                "status": "KO",
+                "message": e
             })
             response.headers['Access-Control-Allow-Origin'] = '*'
             return response
@@ -116,10 +117,10 @@ def set_done(task_id):
                 print("MySQL connection is closed")
 
 
-@app.route('/tasks/<int:task_id>/setNote', methods=['GET', 'POST'])
-def set_note(task_id):
+@app.route('/tasks/<int:task_id>/setDone', methods=['POST'])
+def set_done(task_id):
     if request.method == 'POST':
-        done = request.get_json(force=True).get('note')
+        done = request.get_json(force=True).get('done')
         if done not in [0, 1]:
             response = jsonify({
                 "status": "KO"
