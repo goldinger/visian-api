@@ -79,23 +79,34 @@ def entity(entity_id):
             print("MySQL connection is closed")
 
 
-@app.route('/tasks/<int:task_id>', methods=['GET', 'POST'])
-def task(task_id):
-    if request.method == 'GET':
+@app.route('/tasks/<int:task_id>/setDone', methods=['GET', 'POST'])
+def set_done(task_id):
+    if request.method == 'POST':
+        note = request.get_json(force=True).get('done')
+        if note is None:
+            response = jsonify({
+                "status": "KO"
+            })
+            response.headers['Access-Control-Allow-Origin'] = '*'
+            return response
         try:
             connection = mysql.connector.connect(host='213.32.19.136',
                                                  database='visian',
                                                  user='visian',
                                                  password='visian')
             cursor = connection.cursor()
-            cursor.execute("select * from TasksFull where id = " + str(int(task_id)))
-            records = cursor.fetchall()
-            response = jsonify(to_dict(cursor.column_names, records))
+            cursor.execute("update Tasks set note = " + note + " where id = " + str(int(task_id)))
+            connection.commit()
+            response = jsonify({
+                "status": "OK"
+            })
             response.headers['Access-Control-Allow-Origin'] = '*'
             return response
         except Error as e:
-            print("Error reading data from MySQL table", e)
-            response = jsonify([])
+            print("Error updating data from MySQL table", e)
+            response = jsonify({
+                "status": "KO"
+            })
             response.headers['Access-Control-Allow-Origin'] = '*'
             return response
         finally:
@@ -103,9 +114,12 @@ def task(task_id):
                 connection.close()
                 cursor.close()
                 print("MySQL connection is closed")
-    elif request.method == 'POST':
-        done = request.get_json(force=True).get('done')
-        print(",",request.get_json())
+
+
+@app.route('/tasks/<int:task_id>/setNote', methods=['GET', 'POST'])
+def set_note(task_id):
+    if request.method == 'POST':
+        done = request.get_json(force=True).get('note')
         if done not in [0, 1]:
             response = jsonify({
                 "status": "KO"
@@ -130,6 +144,32 @@ def task(task_id):
             response = jsonify({
                 "status": "KO"
             })
+            response.headers['Access-Control-Allow-Origin'] = '*'
+            return response
+        finally:
+            if (connection.is_connected()):
+                connection.close()
+                cursor.close()
+                print("MySQL connection is closed")
+
+
+@app.route('/tasks/<int:task_id>', methods=['GET'])
+def task(task_id):
+    if request.method == 'GET':
+        try:
+            connection = mysql.connector.connect(host='213.32.19.136',
+                                                 database='visian',
+                                                 user='visian',
+                                                 password='visian')
+            cursor = connection.cursor()
+            cursor.execute("select * from TasksFull where id = " + str(int(task_id)))
+            records = cursor.fetchall()
+            response = jsonify(to_dict(cursor.column_names, records))
+            response.headers['Access-Control-Allow-Origin'] = '*'
+            return response
+        except Error as e:
+            print("Error reading data from MySQL table", e)
+            response = jsonify([])
             response.headers['Access-Control-Allow-Origin'] = '*'
             return response
         finally:
